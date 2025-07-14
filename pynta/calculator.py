@@ -1,3 +1,4 @@
+from pynta import patches
 from tblite.ase import TBLite
 import numpy as np
 import ase
@@ -16,6 +17,10 @@ from copy import deepcopy
 import itertools
 from pynta.utils import *
 import json
+from ase.optimize import BFGS
+import os # Lekia
+# from pynta.patches import apply_all_patches #Lekia
+
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -132,11 +137,18 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
 
     atoms.calc = hf
 
-    opt = Sella(atoms,trajectory="xtbharm.traj",order=0)
+    # opt = BFGS(atoms,trajectory="xtbharm.traj") #Lekia
+    # opt = Sella(atoms,trajectory="xtbharm.traj", order=0)
+    opt = Sella(atoms,trajectory="xtbharm.traj", order=0) # Lekia
 
     try:
-        opt.run(fmax=0.02,steps=150)
+        # opt.run(fmax=0.02,steps=150)
+        converged = opt.run(fmax=0.05, steps=100)  # Limit max steps # Lekia
+        if not converged: # Lekia
+            print(f"Warning: Optimization did not converge in 100 steps") # Lekia
+            print(f"Max force: {atoms.get_forces().max()}") # Lekia
     except Exception as e: #no pbc fallback
+        print(f"Optimization failed: {e}") # Lekia
         return run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                        molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
                                                constraints=constraints,harm_f_software=harm_f_software,
@@ -322,11 +334,19 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
     bigad.set_constraint(out_constraints)
     bigad.calc = hf
 
-    opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
+    # opt = BFGS(bigad,trajectory="xtbharm.traj") # Lekia
+    # opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
+    opt = Sella(bigad,trajectory="xtbharm.traj",order=0) # Lekia
 
     try:
-        opt.run(fmax=0.02,steps=150)
-    except:
+        # opt.run(fmax=0.02,steps=150)
+        converged = opt.run(fmax=0.05, steps=100)  # Limit max steps # Lekia
+        if not converged: # Lekia
+            print(f"Warning: Optimization did not converge in 100 steps") # Lekia
+            print(f"Max force: {atoms.get_forces().max()}") # Lekia
+    # except:
+    except Exception as e: # Lekia
+        print(f"Optimization failed: {e}") # Lekia
         return None,None,None
 
     Eharm,Fharm = bigad.calc.get_energy_forces()
@@ -342,6 +362,7 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
     return outadslab,Eharm,Fharm
 
 def map_harmonically_forced(input):
+    # apply_all_patches() # Lekia
     struct,atom_bond_potentials,site_bond_potentials,nslab,constraints,path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs = input
     sp,Eharm,Fharm = run_harmonically_forced(struct,atom_bond_potentials,site_bond_potentials,nslab,
                     molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,

@@ -205,7 +205,14 @@ class Pynta:
                             label_sites=True,
                             surrogate_metal=self.surrogate_metal)
             self.sites = cas.get_sites()
-            self.site_adjacency = cas.get_neighbor_site_list()
+            # self.site_adjacency = cas.get_neighbor_site_list() 
+
+            try: # Lekia
+                # try only first‐shell neighbors by default
+                self.site_adjacency = cas.get_neighbor_site_list(neighbor_number=1) # Lekia
+            except IndexError: # Lekia
+                # fallback: empty adjacency or handle as you see fit
+                self.site_adjacency = [] # Lekia
         else:
             assert self.site_adjacency is not None 
             
