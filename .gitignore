@@ -19,9 +19,12 @@ docsrc/_templates/
 # _templates*
 *workspace
 *project
-.vscode/
 *.egg-info/
 rmgcat_to_sella_package.tar.gz
 gitlistobjecbysizer.sh
 *pyc*
 pynta_env
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
